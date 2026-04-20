@@ -443,26 +443,45 @@ function ReportsPage({ t }: { t: ThemeColors }) {
 
 /* ─── Settings ─────────────────────────────────────────── */
 function SettingsPage({ t }: { t: ThemeColors }) {
+  const items = [
+    { title: "Profil Bisnis", desc: "Nama toko, alamat, dan kontak", bg: "#0EA5E9", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M2 6h20l-2 7H4L2 6zm2 9h16v4H4v-4zm5-9V4h6v2" /></svg> },
+    { title: "Harga & Tarif", desc: "Atur tarif laundry per kg", bg: "#F97316", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.88 12.76V16h-1.5v-1.29c-.87-.2-1.63-.71-1.73-1.7h.96c.09.64.54 1.05 1.38 1.05.9 0 1.27-.46 1.27-.97 0-.54-.3-.87-1.34-1.11-1.19-.28-2-.74-2-1.83 0-.91.65-1.59 1.47-1.81V7h1.5v1.36c.95.23 1.43.9 1.46 1.69h-.96c-.04-.67-.46-1.05-1.22-1.05-.72 0-1.18.37-1.18.91 0 .52.38.8 1.37 1.04 1.2.29 1.98.79 1.98 1.91-.01.91-.62 1.59-1.46 1.8z" /></svg> },
+    { title: "Notifikasi", desc: "Push notification dan email", bg: "#F59E0B", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 2a7 7 0 00-7 7v4l-2 2v1h18v-1l-2-2V9a7 7 0 00-7-7zm0 20a2 2 0 002-2h-4a2 2 0 002 2z" /></svg> },
+    { title: "Pengelolaan Admin", desc: "Tambah dan kelola akun admin", bg: "#8B5CF6", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" /></svg> },
+    { title: "Backup Data", desc: "Ekspor dan backup data", bg: "#6366F1", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg> },
+    { title: "Tentang Aplikasi", desc: "Versi 1.0.0 · LaundryKu", bg: "#3B82F6", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg> },
+  ];
   return (
-    <div className="p-8">
+    <div className="p-6 md:p-8">
       <h1 style={{ fontSize: 28, fontWeight: 800, color: t.text }}>Pengaturan</h1>
       <p style={{ fontSize: 14, color: t.textSec, marginTop: 2, marginBottom: 32 }}>Konfigurasi sistem laundry</p>
-      <div className="grid grid-cols-2 gap-5 max-w-3xl">
-        {[
-          { title: "Profil Bisnis", desc: "Nama toko, alamat, dan kontak", icon: "🏪" },
-          { title: "Harga & Tarif", desc: "Atur tarif laundry per kg", icon: "💰" },
-          { title: "Notifikasi", desc: "Push notification dan email", icon: "🔔" },
-          { title: "Pengelolaan Admin", desc: "Tambah dan kelola akun admin", icon: "👥" },
-          { title: "Backup Data", desc: "Ekspor dan backup data", icon: "💾" },
-          { title: "Tentang Aplikasi", desc: "Versi 1.0.0 · LaundryKu", icon: "ℹ️" },
-        ].map((item) => (
-          <button key={item.title} className="rounded-2xl p-6 text-left flex items-center gap-4 transition-all hover:scale-[1.01]"
+
+      {/* Profile card */}
+      <div className="rounded-2xl p-5 flex items-center gap-4 mb-6 max-w-3xl"
+        style={{ background: t.cardBg, boxShadow: t.shadow, border: `1px solid ${t.cardBorder}` }}>
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white flex-shrink-0"
+          style={{ background: "linear-gradient(135deg, #2563EB, #7C3AED)", fontSize: 22, fontWeight: 800 }}>A</div>
+        <div className="flex-1 min-w-0">
+          <p style={{ fontSize: 16, fontWeight: 700, color: t.text }}>Admin</p>
+          <p style={{ fontSize: 13, color: t.textMuted }}>admin@laundryku.id</p>
+        </div>
+        <span style={{ fontSize: 12, padding: "4px 12px", borderRadius: 999, background: "#2563EB20", color: "#2563EB", fontWeight: 600 }}>Super Admin</span>
+      </div>
+
+      {/* Settings grid — 1 col on small, 2 on medium+ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl">
+        {items.map((item) => (
+          <button key={item.title}
+            className="rounded-2xl p-5 text-left flex items-center gap-4 transition-all hover:scale-[1.015] active:scale-[0.99]"
             style={{ background: t.cardBg, boxShadow: t.shadow, border: `1px solid ${t.cardBorder}` }}>
-            <span style={{ fontSize: 28 }}>{item.icon}</span>
-            <div>
-              <p style={{ fontSize: 15, fontWeight: 700, color: t.text }}>{item.title}</p>
-              <p style={{ fontSize: 13, color: t.textMuted }}>{item.desc}</p>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: item.bg }}>
+              {item.icon}
             </div>
+            <div className="flex-1 min-w-0">
+              <p style={{ fontSize: 15, fontWeight: 700, color: t.text }}>{item.title}</p>
+              <p style={{ fontSize: 13, color: t.textMuted }} className="truncate">{item.desc}</p>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke={t.textMuted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         ))}
       </div>

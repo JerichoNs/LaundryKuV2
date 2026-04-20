@@ -366,24 +366,36 @@ function MachinesScreen({ t, machines, onDelete, onAdd }: { t: ThemeColors; mach
 
 /* ─── Settings ─────────────────────────────────────────── */
 function SettingsScreen({ t, onThemeToggle }: { t: ThemeColors; onThemeToggle: () => void }) {
+  const items = [
+    { label: "Notifikasi", desc: "Kelola preferensi notifikasi", bg: "#F59E0B", icon: <BellSolidIcon /> },
+    { label: "Profil Bisnis", desc: "Nama toko, alamat, kontak", bg: "#0EA5E9", icon: <StoreSolidIcon /> },
+    { label: "Harga & Tarif", desc: "Atur tarif per kg", bg: "#F97316", icon: <PriceSolidIcon /> },
+    { label: "Pengelolaan Admin", desc: "Tambah dan kelola akun admin", bg: "#8B5CF6", icon: <AdminSolidIcon /> },
+    { label: "Backup Data", desc: "Ekspor dan backup data", bg: "#6366F1", icon: <BackupSolidIcon /> },
+    { label: "Tentang Aplikasi", desc: "Versi 1.0.0", bg: "#3B82F6", icon: <InfoSolidIcon /> },
+  ];
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="px-5 pt-14 pb-4" style={{ background: t.headerBg, borderBottom: `1px solid ${t.divider}`, boxShadow: t.shadowSm }}>
         <h2 style={{ fontSize: 20, fontWeight: 800, color: t.text }}>Pengaturan</h2>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24 space-y-3">
+        {/* Profile Card */}
         <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: t.cardBg, boxShadow: t.shadow, border: `1px solid ${t.cardBorder}` }}>
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg, #2563EB, #1D4ED8)", fontSize: 20, fontWeight: 800 }}>A</div>
-          <div>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white flex-shrink-0" style={{ background: "linear-gradient(135deg, #2563EB, #7C3AED)", fontSize: 22, fontWeight: 800 }}>A</div>
+          <div className="flex-1 min-w-0">
             <p style={{ fontSize: 16, fontWeight: 700, color: t.text }}>Admin</p>
-            <p style={{ fontSize: 13, color: t.textMuted }}>admin@laundryku.id</p>
+            <p style={{ fontSize: 12, color: t.textMuted }} className="truncate">admin@laundryku.id</p>
           </div>
+          <ChevronRightIcon color={t.textMuted} />
         </div>
 
-        {/* Theme toggle card */}
-        <button onClick={onThemeToggle} className="w-full rounded-2xl p-4 flex items-center gap-3"
+        {/* Theme toggle */}
+        <button onClick={onThemeToggle} className="w-full rounded-2xl p-4 flex items-center gap-3 transition-opacity active:opacity-70"
           style={{ background: t.cardBg, boxShadow: t.shadow, border: `1px solid ${t.cardBorder}` }}>
-          <span style={{ fontSize: 20 }}>{t.isDark ? "🌙" : "☀️"}</span>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: t.isDark ? "#1E293B" : "#F1F5F9" }}>
+            <span style={{ fontSize: 18 }}>{t.isDark ? "🌙" : "☀️"}</span>
+          </div>
           <div className="flex-1 text-left">
             <p style={{ fontSize: 14, fontWeight: 600, color: t.text }}>Tema Aplikasi</p>
             <p style={{ fontSize: 12, color: t.textMuted }}>{t.isDark ? "Mode gelap aktif" : "Mode terang aktif"}</p>
@@ -391,24 +403,22 @@ function SettingsScreen({ t, onThemeToggle }: { t: ThemeColors; onThemeToggle: (
           <ThemeToggleSmall isDark={t.isDark} />
         </button>
 
-        {[
-          { label: "Notifikasi", desc: "Kelola preferensi notifikasi", icon: "🔔" },
-          { label: "Profil Bisnis", desc: "Nama toko, alamat, kontak", icon: "🏪" },
-          { label: "Harga & Tarif", desc: "Atur tarif per kg", icon: "💰" },
-          { label: "Tentang Aplikasi", desc: "Versi 1.0.0", icon: "ℹ️" },
-        ].map((item) => (
-          <div key={item.label} className="rounded-2xl p-4 flex items-center gap-3"
+        {/* Settings Items */}
+        {items.map((item) => (
+          <button key={item.label} className="w-full rounded-2xl p-4 flex items-center gap-3 transition-opacity active:opacity-70"
             style={{ background: t.cardBg, boxShadow: t.shadow, border: `1px solid ${t.cardBorder}` }}>
-            <span style={{ fontSize: 20 }}>{item.icon}</span>
-            <div className="flex-1">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: item.bg }}>
+              {item.icon}
+            </div>
+            <div className="flex-1 text-left">
               <p style={{ fontSize: 14, fontWeight: 600, color: t.text }}>{item.label}</p>
               <p style={{ fontSize: 12, color: t.textMuted }}>{item.desc}</p>
             </div>
             <ChevronRightIcon color={t.textMuted} />
-          </div>
+          </button>
         ))}
 
-        <button className="w-full py-4 rounded-xl"
+        <button className="w-full py-4 rounded-xl transition-opacity active:opacity-70"
           style={{ border: "2px solid #EF4444", color: "#EF4444", fontSize: 15, fontWeight: 700, background: t.isDark ? "rgba(239,68,68,0.06)" : "transparent" }}>
           Keluar
         </button>
@@ -491,6 +501,12 @@ function WashIcon({ size = 24, color = "#2563EB" }: { size?: number; color?: str
     </svg>
   );
 }
+function BellSolidIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2a7 7 0 00-7 7v4l-2 2v1h18v-1l-2-2V9a7 7 0 00-7-7zm0 20a2 2 0 002-2h-4a2 2 0 002 2z" /></svg>; }
+function StoreSolidIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M2 6h20l-2 7H4L2 6zm2 9h16v4H4v-4zm5-9V4h6v2" /></svg>; }
+function PriceSolidIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10"/><text x="12" y="16" textAnchor="middle" fontSize="11" fill="#F97316" fontWeight="bold">Rp</text></svg>; }
+function AdminSolidIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" /></svg>; }
+function BackupSolidIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg>; }
+function InfoSolidIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>; }
 function BackIcon({ color, size = 18 }: { color: string; size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
