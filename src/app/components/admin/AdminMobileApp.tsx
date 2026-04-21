@@ -622,18 +622,21 @@ function SettingsMain({ t, setSub }: { t: ThemeColors; setSub: (s: SettingsSub) 
         {/* Profile card */}
         <div className="rounded-2xl p-5 flex items-center gap-4"
           style={{ background: t.cardBg, boxShadow: t.shadow, border: `1px solid ${t.cardBorder}` }}>
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white"
-            style={{ background: "linear-gradient(135deg,#2563EB,#1D4ED8)", fontSize: 20, fontWeight: 800 }}>A</div>
-          <div>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white flex-shrink-0"
+            style={{ background: "linear-gradient(135deg,#2563EB,#7C3AED)", fontSize: 20, fontWeight: 800 }}>A</div>
+          <div className="flex-1 min-w-0">
             <p style={{ fontSize: 16, fontWeight: 700, color: t.text }}>Admin Utama</p>
-            <p style={{ fontSize: 13, color: t.textMuted }}>admin@laundryku.id</p>
+            <p style={{ fontSize: 13, color: t.textMuted }} className="truncate">admin@laundryku.id</p>
           </div>
+          <ChevR color={t.textMuted} />
         </div>
 
         {/* Theme */}
-        <button onClick={t.toggle} className="w-full rounded-2xl p-4 flex items-center gap-3"
+        <button onClick={t.toggle} className="w-full rounded-2xl p-4 flex items-center gap-3 transition-opacity active:opacity-70"
           style={{ background: t.cardBg, boxShadow: t.shadow, border: `1px solid ${t.cardBorder}` }}>
-          <span style={{ fontSize: 20 }}>{t.isDark ? "🌙" : "☀️"}</span>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: t.isDark ? "#1E293B" : "#F1F5F9" }}>
+            <span style={{ fontSize: 18 }}>{t.isDark ? "🌙" : "☀️"}</span>
+          </div>
           <div className="flex-1 text-left">
             <p style={{ fontSize: 14, fontWeight: 600, color: t.text }}>Tema Aplikasi</p>
             <p style={{ fontSize: 12, color: t.textMuted }}>{t.isDark ? "Mode gelap aktif" : "Mode terang aktif"}</p>
@@ -656,7 +659,7 @@ function SettingsMain({ t, setSub }: { t: ThemeColors; setSub: (s: SettingsSub) 
           </button>
         ))}
 
-        <button className="w-full py-4 rounded-xl"
+        <button className="w-full py-4 rounded-xl transition-opacity active:opacity-70"
           style={{ border: "2px solid #EF4444", color: "#EF4444", fontSize: 14, fontWeight: 700, background: t.isDark ? "rgba(239,68,68,0.06)" : "transparent" }}>
           Keluar
         </button>
