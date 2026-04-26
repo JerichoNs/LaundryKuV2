@@ -573,10 +573,72 @@ function CustomerDetailPage({ t, customer: c, onBack }: { t: ThemeColors; custom
 // REPORTS
 // ══════════════════════════════════════════════════════════════
 function ReportsPage({ t }: { t: ThemeColors }) {
-  type ReportTab = "daily" | "monthly";
+  type ReportTab = "daily" | "monthly" | "income";
   const [tab, setTab] = useState<ReportTab>("daily");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const monthlyData = useMemo(() => generateMonthlyData(), []);
+
+  // ── Income input state ──────────────────────────────────────
+  type PayMethod = "Tunai" | "Transfer" | "QRIS";
+  type IncomeEntry = {
+    id: number; orderId: string; customerName: string; machineName: string;
+    service: string; weight: number; pricePerKg: number; subtotal: number;
+    discount: number; total: number; payMethod: PayMethod;
+    notes: string; date: string; time: string; paid: boolean;
+  };
+  const initEntries: IncomeEntry[] = useMemo(() => {
+    const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+    return [
+      { id: 1, orderId: "#LK-001", customerName: "Budi Santoso", machineName: "Mesin 1", service: "Cuci Biasa", weight: 4.5, pricePerKg: 6000, subtotal: 27000, discount: 0, total: 27000, payMethod: "Tunai", notes: "", date: today, time: "08:15", paid: true },
+      { id: 2, orderId: "#LK-002", customerName: "Siti Rahayu", machineName: "Mesin 2", service: "Cuci + Setrika", weight: 3.0, pricePerKg: 8000, subtotal: 24000, discount: 2000, total: 22000, payMethod: "Transfer", notes: "Pelanggan tetap", date: today, time: "09:00", paid: true },
+      { id: 3, orderId: "#LK-003", customerName: "Ahmad Fauzi", machineName: "Mesin 3", service: "Cuci Express", weight: 5.5, pricePerKg: 10000, subtotal: 55000, discount: 5000, total: 50000, payMethod: "QRIS", notes: "", date: today, time: "10:30", paid: true },
+      { id: 4, orderId: "#LK-004", customerName: "Dewi Lestari", machineName: "Mesin 4", service: "Setrika Saja", weight: 2.0, pricePerKg: 5000, subtotal: 10000, discount: 0, total: 10000, payMethod: "Tunai", notes: "", date: today, time: "11:00", paid: false },
+    ];
+  }, []);
+  const [entries, setEntries] = useState<IncomeEntry[]>(initEntries);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const emptyForm = (): Omit<IncomeEntry, "id"> => ({
+    orderId: "", customerName: "", machineName: "Mesin 1", service: "Cuci Biasa",
+    weight: 0, pricePerKg: 6000, subtotal: 0, discount: 0, total: 0,
+    payMethod: "Tunai", notes: "", date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+    time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }), paid: false,
+  });
+  const [form, setForm] = useState<Omit<IncomeEntry, "id">>(emptyForm());
+
+  const paidEntries = entries.filter(e => e.paid);
+  const totalPemasukan = paidEntries.reduce((s, e) => s + e.total, 0);
+  const totalSubtotal = paidEntries.reduce((s, e) => s + e.subtotal, 0);
+  const totalDiskon = paidEntries.reduce((s, e) => s + e.discount, 0);
+  const totalBelumLunas = entries.filter(e => !e.paid).reduce((s, e) => s + e.total, 0);
+  const byMethod = (m: PayMethod) => paidEntries.filter(e => e.payMethod === m).reduce((s, e) => s + e.total, 0);
+
+  const recalc = (f: typeof form) => {
+    const sub = Math.round(f.weight * f.pricePerKg);
+    return { ...f, subtotal: sub, total: Math.max(0, sub - f.discount) };
+  };
+  const handleFormChange = (key: keyof typeof form, val: any) => {
+    setForm(prev => recalc({ ...prev, [key]: val }));
+  };
+  const handleSave = () => {
+    if (!form.customerName || !form.machineName) return;
+    if (editId !== null) {
+      setEntries(prev => prev.map(e => e.id === editId ? { ...form, id: editId } : e));
+      setEditId(null);
+    } else {
+      const newId = Math.max(0, ...entries.map(e => e.id)) + 1;
+      const orderId = `#LK-${String(newId + 100).padStart(3, "0")}`;
+      setEntries(prev => [...prev, { ...form, id: newId, orderId }]);
+    }
+    setForm(emptyForm());
+    setShowForm(false);
+  };
+  const handleEdit = (e: IncomeEntry) => {
+    setForm({ orderId: e.orderId, customerName: e.customerName, machineName: e.machineName, service: e.service, weight: e.weight, pricePerKg: e.pricePerKg, subtotal: e.subtotal, discount: e.discount, total: e.total, payMethod: e.payMethod, notes: e.notes, date: e.date, time: e.time, paid: e.paid });
+    setEditId(e.id); setShowForm(true);
+  };
+  const handleDelete = (id: number) => setEntries(prev => prev.filter(e => e.id !== id));
+  const togglePaid = (id: number) => setEntries(prev => prev.map(e => e.id === id ? { ...e, paid: !e.paid } : e));
 
   // Daily data for selected date
   const todayData = useMemo(() => {
@@ -608,13 +670,13 @@ function ReportsPage({ t }: { t: ThemeColors }) {
   return (
     <div className="p-6 xl:p-8">
       <div className="flex items-center justify-between mb-6">
-        <div><h1 style={{ fontSize: 26, fontWeight: 800, color: t.text }}>Laporan</h1><p style={{ fontSize: 14, color: t.textSec, marginTop: 2 }}>Kinerja laundry harian & bulanan</p></div>
+        <div><h1 style={{ fontSize: 26, fontWeight: 800, color: t.text }}>Laporan</h1><p style={{ fontSize: 14, color: t.textSec, marginTop: 2 }}>Kinerja laundry harian, bulanan & pemasukan</p></div>
         {/* Tab toggle */}
         <div className="flex gap-1 p-1 rounded-xl" style={{ background: t.pillBg }}>
-          {(["daily", "monthly"] as ReportTab[]).map(tb => (
+          {([["daily","📅 Harian"],["monthly","📆 Bulanan"],["income","💰 Pemasukan"]] as [ReportTab,string][]).map(([tb,lbl]) => (
             <button key={tb} onClick={() => setTab(tb)} className="px-5 py-2.5 rounded-xl transition-all"
-              style={{ background: tab === tb ? PRIMARY : "transparent", color: tab === tb ? "white" : t.textMuted, fontSize: 13, fontWeight: 700 }}>
-              {tb === "daily" ? "📅 Harian" : "📆 Bulanan"}
+              style={{ background: tab === tb ? (tb === "income" ? "#F59E0B" : PRIMARY) : "transparent", color: tab === tb ? "white" : t.textMuted, fontSize: 13, fontWeight: 700 }}>
+              {lbl}
             </button>
           ))}
         </div>
@@ -876,6 +938,214 @@ function ReportsPage({ t }: { t: ThemeColors }) {
                     );
                   })}
                 </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "income" && (
+        <div className="space-y-5">
+          {/* Summary cards */}
+          <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
+            {[
+              { label: "Total Pemasukan", val: formatIDR(totalPemasukan), icon: "💰", color: "#F59E0B", bg: t.isDark ? "#451A03" : "#FFFBEB" },
+              { label: "Subtotal Kotor", val: formatIDR(totalSubtotal), icon: "🧾", color: "#2563EB", bg: t.isDark ? "#1E3A5F" : "#EFF6FF" },
+              { label: "Total Diskon", val: formatIDR(totalDiskon), icon: "🏷️", color: "#22C55E", bg: t.isDark ? "#14532D" : "#F0FDF4" },
+              { label: "Belum Lunas", val: formatIDR(totalBelumLunas), icon: "⏳", color: "#EF4444", bg: t.isDark ? "#450A0A" : "#FFF1F2" },
+              { label: "Tunai", val: formatIDR(byMethod("Tunai")), icon: "💵", color: "#8B5CF6", bg: t.isDark ? "#2E1065" : "#F5F3FF" },
+              { label: "Transfer", val: formatIDR(byMethod("Transfer")), icon: "🏦", color: "#EC4899", bg: t.isDark ? "#500724" : "#FDF2F8" },
+              { label: "QRIS", val: formatIDR(byMethod("QRIS")), icon: "📱", color: "#06B6D4", bg: t.isDark ? "#083344" : "#ECFEFF" },
+            ].map(s => (
+              <div key={s.label} className="rounded-2xl p-4" style={{ background: s.bg, border: `1px solid ${t.cardBorder}`, boxShadow: t.shadow }}>
+                <span style={{ fontSize: 20 }}>{s.icon}</span>
+                <p style={{ fontSize: 18, fontWeight: 800, color: s.color, marginTop: 6, lineHeight: 1 }}>{s.val}</p>
+                <p style={{ fontSize: 11, color: t.textMuted, marginTop: 4 }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Form input */}
+          {showForm && (
+            <div className="rounded-2xl p-6" style={{ background: t.cardBg, boxShadow: t.shadow, border: `2px solid ${editId ? "#F59E0B" : PRIMARY}` }}>
+              <div className="flex items-center justify-between mb-5">
+                <p style={{ fontSize: 16, fontWeight: 800, color: t.text }}>{editId ? "✏️ Edit Pemasukan" : "➕ Input Pemasukan Baru"}</p>
+                <button onClick={() => { setShowForm(false); setEditId(null); setForm(emptyForm()); }} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: t.pillBg, color: t.textMuted }}>✕</button>
+              </div>
+              <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+                {/* Nama Pelanggan */}
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: t.textSec, display: "block", marginBottom: 6 }}>Nama Pelanggan *</label>
+                  <input value={form.customerName} onChange={e => handleFormChange("customerName", e.target.value)} placeholder="cth: Budi Santoso"
+                    className="w-full rounded-xl px-4 py-3" style={{ border: `1.5px solid ${t.cardBorder}`, background: t.inputBg ?? t.pillBg, color: t.text, fontSize: 13, outline: "none" }}/>
+                </div>
+                {/* Mesin */}
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: t.textSec, display: "block", marginBottom: 6 }}>Mesin</label>
+                  <select value={form.machineName} onChange={e => handleFormChange("machineName", e.target.value)}
+                    className="w-full rounded-xl px-4 py-3" style={{ border: `1.5px solid ${t.cardBorder}`, background: t.inputBg ?? t.pillBg, color: t.text, fontSize: 13, outline: "none" }}>
+                    {["Mesin 1","Mesin 2","Mesin 3","Mesin 4","Mesin 5","Mesin 6"].map(m => <option key={m}>{m}</option>)}
+                  </select>
+                </div>
+                {/* Layanan */}
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: t.textSec, display: "block", marginBottom: 6 }}>Jenis Layanan</label>
+                  <select value={form.service} onChange={e => handleFormChange("service", e.target.value)}
+                    className="w-full rounded-xl px-4 py-3" style={{ border: `1.5px solid ${t.cardBorder}`, background: t.inputBg ?? t.pillBg, color: t.text, fontSize: 13, outline: "none" }}>
+                    {SERVICE_TYPES.map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                {/* Berat */}
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: t.textSec, display: "block", marginBottom: 6 }}>Berat (kg)</label>
+                  <input type="number" min="0" step="0.5" value={form.weight} onChange={e => handleFormChange("weight", parseFloat(e.target.value) || 0)}
+                    className="w-full rounded-xl px-4 py-3" style={{ border: `1.5px solid ${t.cardBorder}`, background: t.inputBg ?? t.pillBg, color: t.text, fontSize: 13, outline: "none" }}/>
+                </div>
+                {/* Harga/kg */}
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: t.textSec, display: "block", marginBottom: 6 }}>Harga per kg (Rp)</label>
+                  <input type="number" min="0" step="500" value={form.pricePerKg} onChange={e => handleFormChange("pricePerKg", parseInt(e.target.value) || 0)}
+                    className="w-full rounded-xl px-4 py-3" style={{ border: `1.5px solid ${t.cardBorder}`, background: t.inputBg ?? t.pillBg, color: t.text, fontSize: 13, outline: "none" }}/>
+                </div>
+                {/* Diskon */}
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: t.textSec, display: "block", marginBottom: 6 }}>Diskon (Rp)</label>
+                  <input type="number" min="0" step="1000" value={form.discount} onChange={e => handleFormChange("discount", parseInt(e.target.value) || 0)}
+                    className="w-full rounded-xl px-4 py-3" style={{ border: `1.5px solid ${t.cardBorder}`, background: t.inputBg ?? t.pillBg, color: t.text, fontSize: 13, outline: "none" }}/>
+                </div>
+                {/* Metode bayar */}
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: t.textSec, display: "block", marginBottom: 6 }}>Metode Pembayaran</label>
+                  <div className="flex gap-2">
+                    {(["Tunai","Transfer","QRIS"] as PayMethod[]).map(m => (
+                      <button key={m} onClick={() => handleFormChange("payMethod", m)} className="flex-1 py-2.5 rounded-xl transition-all"
+                        style={{ background: form.payMethod === m ? PRIMARY : t.pillBg, color: form.payMethod === m ? "white" : t.text, fontSize: 12, fontWeight: 700, border: `1.5px solid ${form.payMethod === m ? PRIMARY : t.cardBorder}` }}>
+                        {m === "Tunai" ? "💵" : m === "Transfer" ? "🏦" : "📱"} {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Tanggal & Waktu */}
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: t.textSec, display: "block", marginBottom: 6 }}>Waktu Selesai</label>
+                  <input value={form.time} onChange={e => handleFormChange("time", e.target.value)} placeholder="09:30"
+                    className="w-full rounded-xl px-4 py-3" style={{ border: `1.5px solid ${t.cardBorder}`, background: t.inputBg ?? t.pillBg, color: t.text, fontSize: 13, outline: "none" }}/>
+                </div>
+                {/* Catatan */}
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: t.textSec, display: "block", marginBottom: 6 }}>Catatan (opsional)</label>
+                  <input value={form.notes} onChange={e => handleFormChange("notes", e.target.value)} placeholder="Catatan tambahan..."
+                    className="w-full rounded-xl px-4 py-3" style={{ border: `1.5px solid ${t.cardBorder}`, background: t.inputBg ?? t.pillBg, color: t.text, fontSize: 13, outline: "none" }}/>
+                </div>
+              </div>
+              {/* Preview total */}
+              <div className="flex items-center gap-4 mt-5 p-4 rounded-xl" style={{ background: t.isDark ? "#1E293B" : "#F8FAFC", border: `1px solid ${t.cardBorder}` }}>
+                <div className="flex-1">
+                  <p style={{ fontSize: 11, color: t.textMuted }}>Subtotal</p>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: t.text }}>{formatIDR(form.subtotal)}</p>
+                </div>
+                <div style={{ fontSize: 18, color: t.textMuted }}>−</div>
+                <div className="flex-1">
+                  <p style={{ fontSize: 11, color: t.textMuted }}>Diskon</p>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: "#22C55E" }}>{formatIDR(form.discount)}</p>
+                </div>
+                <div style={{ fontSize: 18, color: t.textMuted }}>=</div>
+                <div className="flex-1">
+                  <p style={{ fontSize: 11, color: t.textMuted }}>Total</p>
+                  <p style={{ fontSize: 20, fontWeight: 800, color: "#F59E0B" }}>{formatIDR(form.total)}</p>
+                </div>
+                <div className="flex gap-2 ml-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div onClick={() => handleFormChange("paid", !form.paid)} className="w-5 h-5 rounded flex items-center justify-center"
+                      style={{ background: form.paid ? "#22C55E" : t.pillBg, border: `2px solid ${form.paid ? "#22C55E" : t.cardBorder}` }}>
+                      {form.paid && <span style={{ color: "white", fontSize: 11 }}>✓</span>}
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: t.text }}>Sudah Lunas</span>
+                  </label>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-4 justify-end">
+                <button onClick={() => { setShowForm(false); setEditId(null); setForm(emptyForm()); }} className="px-6 py-2.5 rounded-xl"
+                  style={{ background: t.pillBg, color: t.text, fontSize: 13, fontWeight: 700 }}>Batal</button>
+                <button onClick={handleSave} className="px-8 py-2.5 rounded-xl"
+                  style={{ background: "#F59E0B", color: "white", fontSize: 13, fontWeight: 700 }}>
+                  {editId ? "💾 Simpan Perubahan" : "✅ Simpan Pemasukan"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Action bar */}
+          {!showForm && (
+            <div className="flex items-center justify-between">
+              <p style={{ fontSize: 14, color: t.textSec }}>{entries.length} entri · {paidEntries.length} lunas · {entries.length - paidEntries.length} belum lunas</p>
+              <button onClick={() => { setForm(emptyForm()); setEditId(null); setShowForm(true); }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl"
+                style={{ background: "#F59E0B", color: "white", fontSize: 13, fontWeight: 700 }}>
+                ➕ Input Pemasukan
+              </button>
+            </div>
+          )}
+
+          {/* Income table */}
+          <div className="rounded-2xl overflow-hidden" style={{ background: t.cardBg, boxShadow: t.shadow, border: `1px solid ${t.cardBorder}` }}>
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${t.divider}` }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: t.text }}>📋 Daftar Pemasukan</p>
+              <div className="flex items-center gap-4">
+                <span style={{ fontSize: 12, color: t.textMuted }}>Total: <strong style={{ color: "#F59E0B" }}>{formatIDR(totalPemasukan)}</strong></span>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full" style={{ minWidth: 780 }}>
+                <thead><tr style={{ borderBottom: `1px solid ${t.divider}`, background: t.isDark ? "#0F172A" : "#F8FAFC" }}>
+                  {["No","ID Order","Pelanggan","Mesin","Layanan","Berat","Subtotal","Diskon","Total","Metode","Waktu","Status","Aksi"].map(c => (
+                    <th key={c} className="px-3 py-3 text-left" style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, whiteSpace: "nowrap" }}>{c}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {entries.map((e, i) => (
+                    <tr key={e.id} style={{ borderBottom: `1px solid ${t.divider}`, background: e.paid ? "transparent" : (t.isDark ? "rgba(239,68,68,0.04)" : "rgba(239,68,68,0.02)") }}>
+                      <td className="px-3 py-3" style={{ fontSize: 11, color: t.textMuted }}>{i+1}</td>
+                      <td className="px-3 py-3" style={{ fontSize: 11, fontWeight: 700, color: PRIMARY }}>{e.orderId}</td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white flex-shrink-0" style={{ background: "#F59E0B", fontSize: 10, fontWeight: 700 }}>{e.customerName.charAt(0)}</div>
+                          <span style={{ fontSize: 12, color: t.text, whiteSpace: "nowrap" }}>{e.customerName}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3" style={{ fontSize: 12, color: t.textSec }}>{e.machineName}</td>
+                      <td className="px-3 py-3"><span className="px-2 py-0.5 rounded-full" style={{ fontSize: 10, fontWeight: 600, background: t.pillBg, color: t.textSec, whiteSpace: "nowrap" }}>{e.service}</span></td>
+                      <td className="px-3 py-3" style={{ fontSize: 12, color: t.textSec }}>{e.weight} kg</td>
+                      <td className="px-3 py-3" style={{ fontSize: 12, color: t.textSec }}>{formatIDR(e.subtotal)}</td>
+                      <td className="px-3 py-3" style={{ fontSize: 12, color: "#22C55E", fontWeight: 600 }}>{e.discount > 0 ? `−${formatIDR(e.discount)}` : "—"}</td>
+                      <td className="px-3 py-3" style={{ fontSize: 13, fontWeight: 800, color: "#F59E0B" }}>{formatIDR(e.total)}</td>
+                      <td className="px-3 py-3"><span className="px-2 py-0.5 rounded-full" style={{ fontSize: 10, fontWeight: 700, background: e.payMethod === "Tunai" ? "#FEF9C3" : e.payMethod === "Transfer" ? "#EFF6FF" : "#ECFEFF", color: e.payMethod === "Tunai" ? "#92400E" : e.payMethod === "Transfer" ? PRIMARY : "#0891B2" }}>{e.payMethod === "Tunai" ? "💵" : e.payMethod === "Transfer" ? "🏦" : "📱"} {e.payMethod}</span></td>
+                      <td className="px-3 py-3" style={{ fontSize: 11, color: t.textMuted }}>{e.time}</td>
+                      <td className="px-3 py-3">
+                        <button onClick={() => togglePaid(e.id)} className="px-2.5 py-0.5 rounded-full transition-all"
+                          style={{ fontSize: 10, fontWeight: 700, background: e.paid ? (t.isDark ? "#14532D" : "#F0FDF4") : (t.isDark ? "#450A0A" : "#FFF1F2"), color: e.paid ? "#22C55E" : "#EF4444" }}>
+                          {e.paid ? "✓ Lunas" : "⏳ Belum"}
+                        </button>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex gap-1">
+                          <button onClick={() => handleEdit(e)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: t.pillBg, fontSize: 12 }}>✏️</button>
+                          <button onClick={() => handleDelete(e.id)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: t.isDark ? "#450A0A" : "#FFF1F2", fontSize: 12 }}>🗑️</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                {/* Footer total row */}
+                <tfoot>
+                  <tr style={{ borderTop: `2px solid ${t.divider}`, background: t.isDark ? "#0F172A" : "#F8FAFC" }}>
+                    <td colSpan={6} className="px-3 py-3" style={{ fontSize: 12, fontWeight: 800, color: t.text }}>TOTAL ({paidEntries.length} Transaksi Lunas)</td>
+                    <td className="px-3 py-3" style={{ fontSize: 13, fontWeight: 800, color: t.text }}>{formatIDR(totalSubtotal)}</td>
+                    <td className="px-3 py-3" style={{ fontSize: 13, fontWeight: 800, color: "#22C55E" }}>−{formatIDR(totalDiskon)}</td>
+                    <td className="px-3 py-3" style={{ fontSize: 15, fontWeight: 800, color: "#F59E0B" }}>{formatIDR(totalPemasukan)}</td>
+                    <td colSpan={4} className="px-3 py-3" style={{ fontSize: 11, color: t.textMuted }}>Belum lunas: {formatIDR(totalBelumLunas)}</td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
